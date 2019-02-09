@@ -1,5 +1,5 @@
-#define LOG_OUT 1 // use the log output function
 #define FFT_N 256 // set to 256 point fft
+#define LOG_OUT 1
 
 #define PIX_COUNT 60
 #define PIX_PIN 2
@@ -41,8 +41,8 @@ void setup()
   Serial.flush();
 
   TIMSK0 = 0; // turn off timer0 for lower jitter
-  ADCSRA = 0xe5; // set the adc to free running mode
-  ADMUX = 0xC0; // use adc0
+  ADCSRA = 0xe7; // set the adc to free running mode
+  ADMUX = 0x40; // use adc0
   DIDR0 = 0x01; // turn off the digital input for adc0
 
   RainbowTrum.Begin();
@@ -51,12 +51,16 @@ void setup()
 
   uint8_t* RT_Buffer = (uint8_t*) malloc(3 * PIX_COUNT * sizeof(uint8_t));
 
+  for(int i=0; i<=180; i++){
+    *(RT_Buffer + i) = 0;
+  }
+
   for(;;){
     cli();  // UDRE interrupt slows this way down on arduino1.0
 
-    for (int i = 0 ; i < 512 ; i += 2) { // save 256 samples
+    for (int i = 0 ; i < 512 ; i += 2) { // save 128 samples
       while(!(ADCSRA & 0x10)); // wait for adc to be ready
-      ADCSRA = 0xf5; // restart adc
+      ADCSRA = 0xf7; // restart adc
       byte m = ADCL; // fetch adc data
       byte j = ADCH;
       int k = (j << 8) | m; // form into an int
@@ -69,25 +73,20 @@ void setup()
     fft_window(); // window the data for better frequency response
     fft_reorder(); // reorder the data before doing the fft
     fft_run(); // process the data in the fft
-    fft_mag_log(); // take the output of the fft
+    fft_mag_log();
     sei();
 
-    for(int i=0; i<=180; i++){
-      *(RT_Buffer + i) = 0;
-    }
 
-    for(int i=0; i<=60; i++){
-      *(RT_Buffer + i) = fft_log_out[i] / 2;
+    for(uint8_t i = 0; i < 60; i++){
+      *(RT_Buffer + i) = *(fft_log_out + (i + i / 2 + 33)) > 50 ?
+        *(fft_log_out + (i + i / 2 + 33)) - 30 : 0;
     }
-
     RT_WriteAll(RT_Buffer);
   }
-
 }
 
 
+void loop()
+{
 
-  void loop()
-  {
-
-  }
+}
