@@ -1,23 +1,13 @@
-#include <NeoPixelBus.h>
+#define LOG_OUT 1 // use the log output function
+#define FFT_N 256 // set to 256 point fft
 
 #define PIX_COUNT 60
 #define PIX_PIN 2
 
-#define BEAT 0 // 3
-#define SECTION 4 // 11
-#define RHYTHM 12 // 23
-
-#define BEAT_IDLE 0,10,10
-#define SECTION_IDLE 15,10,0
-#define RHYTHM_IDLE 15,5,5
-
-#define BEAT_ACT 60,0,0
-#define SECTION_ACT 0,60,0
-#define RHYTHM_ACT 0,20,60
+#include <NeoPixelBus.h>
+#include <FFT.h>
 
 NeoPixelBus<NeoGrbFeature, NeoWs2812xMethod> RainbowTrum(PIX_COUNT, PIX_PIN);
-
-int intensity = 50;
 
 RgbColor red(127, 0, 0);
 RgbColor green(0, 127, 0);
@@ -49,105 +39,55 @@ void setup()
   Serial.begin(115200);
   while (!Serial);
   Serial.flush();
+
+  TIMSK0 = 0; // turn off timer0 for lower jitter
+  ADCSRA = 0xe5; // set the adc to free running mode
+  ADMUX = 0xC0; // use adc0
+  DIDR0 = 0x01; // turn off the digital input for adc0
+
   RainbowTrum.Begin();
   RainbowTrum.Show();
   // End of initialising
 
   uint8_t* RT_Buffer = (uint8_t*) malloc(3 * PIX_COUNT * sizeof(uint8_t));
 
-  int index;
+  for(;;){
+    cli();  // UDRE interrupt slows this way down on arduino1.0
 
-  for(index = BEAT; index <= BEAT + 3; index++){
-    RT_WriteOne(index, BEAT_IDLE);
-  }
-
-  for(index = SECTION; index <= SECTION + 8; index++){
-    RT_WriteOne(index, SECTION_IDLE);
-  }
-
-  for(index = RHYTHM; index <= RHYTHM + 12; index++){
-    RT_WriteOne(index, RHYTHM_IDLE);
-  }
-
-  // THE SHOW BEGINS : Preparing Beats
-  for(int i = 0; i < 8; i++){
-    for(index = BEAT; index <= BEAT + 3; index++){
-      RT_WriteOne(index, 100, 50, 0);
-    }
-    delay(100);
-    for(index = BEAT; index <= BEAT + 3; index++){
-      RT_WriteOne(index, BEAT_IDLE);
-    }
-    delay(900);
-  }
-
-  uint8_t Melody[32] = {
-    3,2,3,4,5,4,3,2,3,6,5,4,5,6,7,8,6,8,7,6,5,4,3,5,4,5,6,5,4,3,2,0
-  };
-
-  //Music Starts
-  uint8_t Last_Melody = 0;
-  for(index = 0; index <= 31; index++){
-    // Beat
-    switch(index % 4){
-    case 0:
-      RT_WriteOne(BEAT + 0, BEAT_ACT);
-      RT_WriteOne(BEAT + 3, BEAT_IDLE);
-      break;
-    case 1:
-      RT_WriteOne(BEAT + 1, BEAT_ACT);
-      RT_WriteOne(BEAT + 0, BEAT_IDLE);
-      break;
-    case 2:
-      RT_WriteOne(BEAT + 2, BEAT_ACT);
-      RT_WriteOne(BEAT + 1, BEAT_IDLE);
-      break;
-    case 3:
-      RT_WriteOne(BEAT + 3, BEAT_ACT);
-      RT_WriteOne(BEAT + 2, BEAT_IDLE);
-      break;
+    for (int i = 0 ; i < 512 ; i += 2) { // save 256 samples
+      while(!(ADCSRA & 0x10)); // wait for adc to be ready
+      ADCSRA = 0xf5; // restart adc
+      byte m = ADCL; // fetch adc data
+      byte j = ADCH;
+      int k = (j << 8) | m; // form into an int
+      k -= 0x0200; // form into a signed int
+      k <<= 6; // form into a 16b signed int
+      fft_input[i] = k; // put real data into even bins
+      fft_input[i+1] = 0; // set odd bins to 0
     }
 
-    // Section
-    RT_WriteOne(SECTION + index / 4, SECTION_ACT);
+    fft_window(); // window the data for better frequency response
+    fft_reorder(); // reorder the data before doing the fft
+    fft_run(); // process the data in the fft
+    fft_mag_log(); // take the output of the fft
+    sei();
 
-    // Rhythm
-    RT_WriteOne(RHYTHM + Last_Melody + 2, RHYTHM_IDLE);
-    Last_Melody = Melody[index];
-    RT_WriteOne(RHYTHM + Last_Melody + 2, RHYTHM_ACT);
-
-    delay(480);
-  }
-
-  //Ending
-
-  for(index = BEAT; index <= BEAT + 3; index++){
-    RT_WriteOne(index, BEAT_IDLE);
-  }
-
-  for(index = SECTION; index <= SECTION + 8; index++){
-    RT_WriteOne(index, SECTION_IDLE);
-  }
-
-  for(index = RHYTHM; index <= RHYTHM + 12; index++){
-    RT_WriteOne(index, RHYTHM_IDLE);
-  }
-
-  for(int i = 0; i < 4; i++){
-    for(index = SECTION; index <= SECTION + 7; index++){
-      RT_WriteOne(index, 50, 0, 50);
+    for(int i=0; i<=180; i++){
+      *(RT_Buffer + i) = 0;
     }
-    delay(500);
-    for(index = SECTION; index <= SECTION + 7; index++){
-      RT_WriteOne(index, SECTION_IDLE);
-    }
-    delay(500);
-  }
 
+    for(int i=0; i<=60; i++){
+      *(RT_Buffer + i) = fft_log_out[i] / 2;
+    }
+
+    RT_WriteAll(RT_Buffer);
+  }
 
 }
 
-void loop()
-{
 
-}
+
+  void loop()
+  {
+
+  }
