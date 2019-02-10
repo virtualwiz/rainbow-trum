@@ -41,9 +41,9 @@ void setup()
   Serial.flush();
 
   TIMSK0 = 0; // turn off timer0 for lower jitter
-  ADCSRA = 0xe7; // set the adc to free running mode
-  ADMUX = 0x40; // use adc0
-  DIDR0 = 0x01; // turn off the digital input for adc0
+  ADCSRA = 0xe7;
+  ADMUX = 0x40;
+  DIDR0 = 0x01;
 
   RainbowTrum.Begin();
   RainbowTrum.Show();
@@ -56,12 +56,18 @@ void setup()
   }
 
   for(;;){
-    cli();  // UDRE interrupt slows this way down on arduino1.0
+    cli();
 
-    for (int i = 0 ; i < 512 ; i += 2) { // save 128 samples
+    for (int i = 0 ; i < 512 ; i += 2) {
+
       while(!(ADCSRA & 0x10)); // wait for adc to be ready
       ADCSRA = 0xf7; // restart adc
-      byte m = ADCL; // fetch adc data
+      while(!(ADCSRA & 0x10)); // wait for adc to be ready
+      ADCSRA = 0xf7; // restart adc
+      while(!(ADCSRA & 0x10)); // wait for adc to be ready
+      ADCSRA = 0xf7; // restart adc
+
+      byte m = ADCL;
       byte j = ADCH;
       int k = (j << 8) | m; // form into an int
       k -= 0x0200; // form into a signed int
@@ -73,15 +79,16 @@ void setup()
     fft_window(); // window the data for better frequency response
     fft_reorder(); // reorder the data before doing the fft
     fft_run(); // process the data in the fft
-    fft_mag_log();
+    fft_mag_log(); // log output
     sei();
 
-
     for(uint8_t i = 0; i < 60; i++){
-      *(RT_Buffer + i) = *(fft_log_out + (i + i / 2 + 33)) > 50 ?
-        *(fft_log_out + (i + i / 2 + 33)) - 30 : 0;
+      *(RT_Buffer + i) = *(fft_log_out + (i + i / 2 + 33)) > 55 ?
+        *(fft_log_out + (i + i / 2 + 33)) - 55 : 0;
     }
-    RT_WriteAll(RT_Buffer);
+
+    RT_WriteAll(RT_Buffer); // Write to Rainbowtrum
+
   }
 }
 
