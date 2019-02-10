@@ -7,6 +7,10 @@
 #include <NeoPixelBus.h>
 #include <FFT.h>
 
+#define THRESHOLD_R 60
+#define THRESHOLD_G 70
+#define THRESHOLD_B 80
+
 NeoPixelBus<NeoGrbFeature, NeoWs2812xMethod> RainbowTrum(PIX_COUNT, PIX_PIN);
 
 RgbColor red(127, 0, 0);
@@ -59,7 +63,6 @@ void setup()
     cli();
 
     for (int i = 0 ; i < 512 ; i += 2) {
-
       while(!(ADCSRA & 0x10)); // wait for adc to be ready
       ADCSRA = 0xf7; // restart adc
       while(!(ADCSRA & 0x10)); // wait for adc to be ready
@@ -83,8 +86,16 @@ void setup()
     sei();
 
     for(uint8_t i = 0; i < 60; i++){
-      *(RT_Buffer + i) = *(fft_log_out + (i + i / 2 + 33)) > 55 ?
-        *(fft_log_out + (i + i / 2 + 33)) - 55 : 0;
+      *(RT_Buffer + i) = *(fft_log_out + (i + i / 2 + 33)) > THRESHOLD_R ?
+        *(fft_log_out + (i + i / 2 + 33)) - THRESHOLD_R - (*(fft_log_out + (i + i / 2 + 33)) > THRESHOLD_G ? *(fft_log_out + (i + i / 2 + 33)) - THRESHOLD_G : 0): 0;
+    }
+    for(uint8_t i = 0; i < 60; i++){
+      *(RT_Buffer + 60 +i) = *(fft_log_out + (i + i / 2 + 33)) > THRESHOLD_G ?
+        *(fft_log_out + (i + i / 2 + 33)) - THRESHOLD_G : 0;
+    }
+    for(uint8_t i = 0; i < 60; i++){
+      *(RT_Buffer + 120 + i) = *(fft_log_out + (i + i / 2 + 33)) > THRESHOLD_B ?
+        *(fft_log_out + (i + i / 2 + 33)) - THRESHOLD_B : 0;
     }
 
     RT_WriteAll(RT_Buffer); // Write to Rainbowtrum
