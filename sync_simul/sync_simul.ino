@@ -7,19 +7,28 @@
 #include <NeoPixelBus.h>
 #include <FFT.h>
 
-#define THRESHOLD_R 20
-#define THRESHOLD_G 30
-#define THRESHOLD_B 40
+//#define THRESHOLD_R 20
+//#define THRESHOLD_G 30
+//#define THRESHOLD_B 40
 
-#define THRESHOLD 30
+#define THRESHOLD 50
 
-#define RED 255, 0, 0
-#define ORANGE 255, 122, 0
-#define YELLOW 255, 222, 45
-#define GREEN 0, 255, 0
-#define CYAN 0, 193, 172
-#define BLUE 0, 0, 255
-#define PURPLE 246, 124, 249
+#define RANGE_R (THRESHOLD + 3)
+#define RANGE_O (THRESHOLD + 6)
+#define RANGE_Y (THRESHOLD + 9)
+#define RANGE_G (THRESHOLD + 12)
+#define RANGE_C (THRESHOLD + 15)
+#define RANGE_B (THRESHOLD + 18)
+#define RANGE_P (THRESHOLD + 21)
+
+#define OFF 0, 0, 0
+#define RED 20, 0, 0
+#define ORANGE 40, 30, 0
+#define YELLOW 50, 50, 0
+#define GREEN 0, 70, 0
+#define CYAN 0, 80, 80
+#define BLUE 0, 80, 150
+#define PURPLE 150, 100, 150
 
 NeoPixelBus<NeoGrbFeature, NeoWs2812xMethod> RainbowTrum(PIX_COUNT, PIX_PIN);
 
@@ -96,44 +105,37 @@ void setup()
     fft_mag_log(); // log output
     sei();
 
-    /*********************************************************************************************************************************************************************/
-    /* for(uint8_t i = 0; i < 60; i++){                                                                                                                                  */
-    /*   *(RT_Buffer + i) = *(fft_log_out + (i + i / 2 + 33)) > THRESHOLD_R ?                                                                                            */
-    /*     *(fft_log_out + (i + i / 2 + 33)) - THRESHOLD_R - (*(fft_log_out + (i + i / 2 + 33)) > THRESHOLD_G ? *(fft_log_out + (i + i / 2 + 33)) - THRESHOLD_G : 0): 0; */
-    /* }                                                                                                                                                                 */
-    /* for(uint8_t i = 0; i < 60; i++){                                                                                                                                  */
-    /*   *(RT_Buffer + 60 +i) = *(fft_log_out + (i + i / 2 + 33)) > THRESHOLD_G ?                                                                                        */
-    /*     *(fft_log_out + (i + i / 2 + 33)) - THRESHOLD_G : 0;                                                                                                          */
-    /* }                                                                                                                                                                 */
-    /* for(uint8_t i = 0; i < 60; i++){                                                                                                                                  */
-    /*   *(RT_Buffer + 120 + i) = *(fft_log_out + (i + i / 2 + 33)) > THRESHOLD_B ?                                                                                      */
-    /*     *(fft_log_out + (i + i / 2 + 33)) - THRESHOLD_B : 0;                                                                                                          */
-    /* }                                                                                                                                                                 */
-    /*********************************************************************************************************************************************************************/
-
     for(uint8_t i = 0; i < PIX_COUNT; i++){
       *(Spectrum + i) = *(fft_log_out + (i + i / 2 + 33));
+      //Serial.println(*(Spectrum + i));
     }
 
     for(uint8_t i = 0; i < PIX_COUNT; i++){
-      switch ((*(Spectrum + i) - THRESHOLD) / 36){
-      case 0 :
-        Colour_To_Buffer(RT_Buffer, i, RED); break;
-      case 1:
-        Colour_To_Buffer(RT_Buffer, i, ORANGE); break;
-      case 2:
-        Colour_To_Buffer(RT_Buffer, i, YELLOW); break;
-      case 3:
-        Colour_To_Buffer(RT_Buffer, i, GREEN); break;
-      case 4:
-        Colour_To_Buffer(RT_Buffer, i, CYAN); break;
-      case 5:
-        Colour_To_Buffer(RT_Buffer, i, BLUE); break;
-      case 6:
-        Colour_To_Buffer(RT_Buffer, i, PURPLE); break;
+      if(*(Spectrum + i) <= THRESHOLD){
+        Colour_To_Buffer(RT_Buffer, i, OFF);
+      }
+      else if(*(Spectrum + i) <= RANGE_R){
+        Colour_To_Buffer(RT_Buffer, i, RED);
+      }
+      else if(*(Spectrum + i) <= RANGE_O){
+        Colour_To_Buffer(RT_Buffer, i, ORANGE);
+      }
+      else if(*(Spectrum + i) <= RANGE_Y){
+        Colour_To_Buffer(RT_Buffer, i, YELLOW);
+      }
+      else if(*(Spectrum + i) <= RANGE_G){
+        Colour_To_Buffer(RT_Buffer, i, GREEN);
+      }
+      else if(*(Spectrum + i) <= RANGE_C){
+        Colour_To_Buffer(RT_Buffer, i, CYAN);
+      }
+      else if(*(Spectrum + i) <= RANGE_B){
+        Colour_To_Buffer(RT_Buffer, i, BLUE);
+      }
+      else{
+        Colour_To_Buffer(RT_Buffer, i, PURPLE);
       }
     }
-
 
     RT_WriteAll(RT_Buffer); // Write to Rainbowtrum
 
