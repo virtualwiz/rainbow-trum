@@ -7,17 +7,21 @@
 #include <NeoPixelBus.h>
 #include <FFT.h>
 
-#define THRESHOLD_R 60
-#define THRESHOLD_G 70
-#define THRESHOLD_B 80
+#define THRESHOLD_R 20
+#define THRESHOLD_G 30
+#define THRESHOLD_B 40
+
+#define THRESHOLD 30
+
+#define RED 255, 0, 0
+#define ORANGE 255, 122, 0
+#define YELLOW 255, 222, 45
+#define GREEN 0, 255, 0
+#define CYAN 0, 193, 172
+#define BLUE 0, 0, 255
+#define PURPLE 246, 124, 249
 
 NeoPixelBus<NeoGrbFeature, NeoWs2812xMethod> RainbowTrum(PIX_COUNT, PIX_PIN);
-
-RgbColor red(127, 0, 0);
-RgbColor green(0, 127, 0);
-RgbColor blue(0, 0, 127);
-RgbColor white(127);
-RgbColor black(5);
 
 void RT_WriteOne(uint8_t position, uint8_t r, uint8_t g, uint8_t b){
   RainbowTrum.SetPixelColor(position, RgbColor(r, g, b));
@@ -37,6 +41,12 @@ void RT_WriteAll(uint8_t* Buffer_Ptr){
   RainbowTrum.Show();
 }
 
+void Colour_To_Buffer(uint8_t* Buffer_Ptr, uint8_t position, uint8_t r, uint8_t g, uint8_t b){
+  *(Buffer_Ptr + position) = r;
+  *(Buffer_Ptr + position + PIX_COUNT) = g;
+  *(Buffer_Ptr + position + (2 * PIX_COUNT)) = b;
+}
+
 void setup()
 {
   // Initialising
@@ -54,6 +64,7 @@ void setup()
   // End of initialising
 
   uint8_t* RT_Buffer = (uint8_t*) malloc(3 * PIX_COUNT * sizeof(uint8_t));
+  uint8_t Spectrum[60];
 
   for(int i=0; i<=180; i++){
     *(RT_Buffer + i) = 0;
@@ -85,18 +96,44 @@ void setup()
     fft_mag_log(); // log output
     sei();
 
-    for(uint8_t i = 0; i < 60; i++){
-      *(RT_Buffer + i) = *(fft_log_out + (i + i / 2 + 33)) > THRESHOLD_R ?
-        *(fft_log_out + (i + i / 2 + 33)) - THRESHOLD_R - (*(fft_log_out + (i + i / 2 + 33)) > THRESHOLD_G ? *(fft_log_out + (i + i / 2 + 33)) - THRESHOLD_G : 0): 0;
+    /*********************************************************************************************************************************************************************/
+    /* for(uint8_t i = 0; i < 60; i++){                                                                                                                                  */
+    /*   *(RT_Buffer + i) = *(fft_log_out + (i + i / 2 + 33)) > THRESHOLD_R ?                                                                                            */
+    /*     *(fft_log_out + (i + i / 2 + 33)) - THRESHOLD_R - (*(fft_log_out + (i + i / 2 + 33)) > THRESHOLD_G ? *(fft_log_out + (i + i / 2 + 33)) - THRESHOLD_G : 0): 0; */
+    /* }                                                                                                                                                                 */
+    /* for(uint8_t i = 0; i < 60; i++){                                                                                                                                  */
+    /*   *(RT_Buffer + 60 +i) = *(fft_log_out + (i + i / 2 + 33)) > THRESHOLD_G ?                                                                                        */
+    /*     *(fft_log_out + (i + i / 2 + 33)) - THRESHOLD_G : 0;                                                                                                          */
+    /* }                                                                                                                                                                 */
+    /* for(uint8_t i = 0; i < 60; i++){                                                                                                                                  */
+    /*   *(RT_Buffer + 120 + i) = *(fft_log_out + (i + i / 2 + 33)) > THRESHOLD_B ?                                                                                      */
+    /*     *(fft_log_out + (i + i / 2 + 33)) - THRESHOLD_B : 0;                                                                                                          */
+    /* }                                                                                                                                                                 */
+    /*********************************************************************************************************************************************************************/
+
+    for(uint8_t i = 0; i < PIX_COUNT; i++){
+      *(Spectrum + i) = *(fft_log_out + (i + i / 2 + 33));
     }
-    for(uint8_t i = 0; i < 60; i++){
-      *(RT_Buffer + 60 +i) = *(fft_log_out + (i + i / 2 + 33)) > THRESHOLD_G ?
-        *(fft_log_out + (i + i / 2 + 33)) - THRESHOLD_G : 0;
+
+    for(uint8_t i = 0; i < PIX_COUNT; i++){
+      switch ((*(Spectrum + i) - THRESHOLD) / 36){
+      case 0 :
+        Colour_To_Buffer(RT_Buffer, i, RED); break;
+      case 1:
+        Colour_To_Buffer(RT_Buffer, i, ORANGE); break;
+      case 2:
+        Colour_To_Buffer(RT_Buffer, i, YELLOW); break;
+      case 3:
+        Colour_To_Buffer(RT_Buffer, i, GREEN); break;
+      case 4:
+        Colour_To_Buffer(RT_Buffer, i, CYAN); break;
+      case 5:
+        Colour_To_Buffer(RT_Buffer, i, BLUE); break;
+      case 6:
+        Colour_To_Buffer(RT_Buffer, i, PURPLE); break;
+      }
     }
-    for(uint8_t i = 0; i < 60; i++){
-      *(RT_Buffer + 120 + i) = *(fft_log_out + (i + i / 2 + 33)) > THRESHOLD_B ?
-        *(fft_log_out + (i + i / 2 + 33)) - THRESHOLD_B : 0;
-    }
+
 
     RT_WriteAll(RT_Buffer); // Write to Rainbowtrum
 
