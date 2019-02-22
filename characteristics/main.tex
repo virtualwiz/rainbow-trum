@@ -1,0 +1,68 @@
+\documentclass[12pt]{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{textcomp}
+
+\setlength{\oddsidemargin}{0mm}
+\setlength{\evensidemargin}{0mm}
+\usepackage[left=25mm,right=25mm,top=25mm,bottom=25mm]{geometry}
+
+%% \linespread{1.25}
+
+\title{System Characteristic Evaluation}
+
+\begin{document}
+
+\begin{table}[H!]\centering
+  \caption{List of Materials}
+  \begin{tabular}{l|l|l}
+    \hline
+    Component & Description & Price \\
+    \hline
+    ATMEGA2560 & Main microcontroller(processor) & \pounds 7.50 \\
+    WS2812b & Full colour LEDs with integrated controllers, $1m$ in length & \pounds 6.30 \\
+    LM358 & Operational amplifier & 30 p \\
+    Push buttons & User input & 50 p \\
+    52DB & Condenser microphone & 10 p \\
+    LCD1602 & LCD character display & \pounds 2.00 \\
+    Others & Wires, resisters, capacitors, etc. & \pounds 1.00 \\
+    \hline
+    Total & & \pounds 17.7 \\
+    \hline
+  \end{tabular}
+\end{table}
+
+\begin{table}[H!]\centering
+  \caption{Voltage Range}
+  \begin{tabular}{l|l}
+    \hline
+    Component & Working Range of Voltage \\
+    \hline
+    ATMEGA2560 & 1.8 -- 6.0 V \\
+    WS2812b & 3.5 -- 5.3 V \\
+    LM358 & Maximum 32 V \\
+    LCD1602 & Maximum 5.5 V \\
+    \hline
+    Entire system & 3.5 -- 5.5 V \\
+    \hline
+  \end{tabular}
+\end{table}
+
+\begin{table}[H!]\centering
+  \caption{Temperature Range}
+  \begin{tabular}{l|l}
+    \hline
+    Component & Working Range of Temperature \\
+    \hline
+    ATMEGA2560 & -55 -- 125 \textdegree{}C \\
+    WS2812b & -25 -- 80 \textdegree{}C \\
+    LM358 & -55 -- 125 \textdegree{}C \\
+    LCD1602 & -20 -- 70 \textdegree{}C \\
+    \hline
+    Entire system & -20 -- 70 \textdegree{}C \\
+    \hline
+  \end{tabular}
+\end{table}
+
+\end{document}
