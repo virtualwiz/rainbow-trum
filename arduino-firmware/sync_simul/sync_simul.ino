@@ -75,11 +75,6 @@ void setup()
     for (int i = 0 ; i < 512 ; i += 2) {
       while(!(ADCSRA & 0x10)); // wait for adc to be ready
       ADCSRA = 0xf7; // restart adc
-      while(!(ADCSRA & 0x10)); // wait for adc to be ready
-      ADCSRA = 0xf7; // restart adc
-      while(!(ADCSRA & 0x10)); // wait for adc to be ready
-      ADCSRA = 0xf7; // restart adc
-
       byte m = ADCL;
       byte j = ADCH;
       int k = (j << 8) | m; // form into an int
