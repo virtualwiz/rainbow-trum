@@ -54,7 +54,7 @@ void setup()
   Serial.flush();
 
   TIMSK0 = 0; // turn off timer0 for lower jitter
-  ADCSRA = 0xe7;
+  ADCSRA = 0xe5;
   ADMUX = 0x40;
   DIDR0 = 0x01;
 
@@ -74,7 +74,7 @@ void setup()
 
     for (int i = 0 ; i < 512 ; i += 2) {
       while(!(ADCSRA & 0x10)); // wait for adc to be ready
-      ADCSRA = 0xf7; // restart adc
+      ADCSRA = 0xf5; // restart adc
       byte m = ADCL;
       byte j = ADCH;
       int k = (j << 8) | m; // form into an int
